@@ -17,6 +17,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/HardwareStatus.msg"
   "srv/ResetCounter.srv"
   "srv/ActivateTurtle.srv"
+  "action/CountUntil.action"
 )
 
 ament_export_dependencies(rosidl_default_runtime)
