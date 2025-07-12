@@ -24,15 +24,19 @@ ament_target_dependencies(number_counter rclcpp example_interfaces my_robot_inte
 add_executable(reset_counter_client src/reset_counter_client.cpp)
 ament_target_dependencies(reset_counter_client rclcpp my_robot_interfaces)
 
-add_executable(count_until_server src/count_until_server_minimal.cpp)
-ament_target_dependencies(count_until_server rclcpp rclcpp_action my_robot_interfaces)
+add_executable(count_until_server_minimal src/count_until_server_minimal.cpp)
+ament_target_dependencies(count_until_server_minimal rclcpp rclcpp_action my_robot_interfaces)
+
+add_executable(count_until_client_minimal src/count_until_client_minimal.cpp)
+ament_target_dependencies(count_until_client_minimal rclcpp rclcpp_action my_robot_interfaces)
 
 install(TARGETS
   test_node
   number_publisher
   number_counter
   reset_counter_client
-  count_until_server
+  count_until_server_minimal
+  count_until_client_minimal
   DESTINATION lib/${PROJECT_NAME}/
 )
 

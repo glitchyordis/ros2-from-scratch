@@ -18,6 +18,8 @@ class CountUntilServerNode(Node):
             "count_until", # action name
             goal_callback=self.goal_callback,
             execute_callback=self.execute_callback)
+        self.get_logger().info("Action server has been started.")
+
         
     # Every new received goal will be processed here first    
     def goal_callback(self, goal_request: CountUntil.Goal):
