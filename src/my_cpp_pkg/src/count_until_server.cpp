@@ -19,12 +19,15 @@ class CountUntilServerNode : public rclcpp::Node
 public:
     CountUntilServerNode() : Node("count_until_server")
     {
+        cb_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
         count_until_server_ = rclcpp_action::create_server<CountUntil>(
             this,
             "count_until",
             std::bind(&CountUntilServerNode::goalCallback, this, _1, _2),
             std::bind(&CountUntilServerNode::cancelCallback, this, _1),
-            std::bind(&CountUntilServerNode::executeCallback, this, _1)
+            std::bind(&CountUntilServerNode::executeCallback, this, _1),
+            rcl_action_server_get_default_options(), // required else compiler complain not finding overload for create_server() function
+            cb_group_
         );
         RCLCPP_INFO(this->get_logger(), "Action server has been started.");
     }
@@ -75,6 +78,12 @@ private:
 
         RCLCPP_INFO(this->get_logger(), "Executing the goal");
         for (int i = 0; i < target_number; i++) {
+            if (goal_handle->is_canceling()) {
+                RCLCPP_INFO(this->get_logger(), "Canceling goal");
+                result->reached_number = counter;
+                goal_handle->canceled(result);
+                return;
+            }
             counter++;
             RCLCPP_INFO(this->get_logger(), "%d", counter);
             feedback->current_number = counter;
@@ -87,13 +96,16 @@ private:
     }
 
     rclcpp_action::Server<CountUntil>::SharedPtr count_until_server_;
+    rclcpp::CallbackGroup::SharedPtr cb_group_;
 };
 
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<CountUntilServerNode>();
-    rclcpp::spin(node);
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(node);
+    executor.spin();
     rclcpp::shutdown();
     return 0;
 }

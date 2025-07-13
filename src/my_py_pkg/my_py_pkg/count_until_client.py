@@ -31,6 +31,11 @@ class CountUntilClientNode(Node):
             goal, feedback_callback=self.goal_feedback_callback
         ).add_done_callback(self.goal_response_callback)
 
+    # Method to send a cancel request for the current goal
+    def cancel_goal(self):
+        self.get_logger().info("Send a cancel goal request")
+        self.goal_handle_.cancel_goal_async()
+
     # Get the goal response and if accepted, register a callback for the result
     def goal_response_callback(self, future):
         self.goal_handle_: ClientGoalHandle = future.result()
@@ -57,6 +62,8 @@ class CountUntilClientNode(Node):
     def goal_feedback_callback(self, feedback_msg):
         number = feedback_msg.feedback.current_number
         self.get_logger().info("Got feedback: " + str(number))
+        
+        # uncomment the following to test canceling goal
         # if number >= 2:
         #    self.cancel_goal()
 

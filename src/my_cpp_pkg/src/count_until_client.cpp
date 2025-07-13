@@ -41,6 +41,15 @@ public:
         count_until_client_->async_send_goal(goal, options);
     }
 
+    // Method to send a cancel request
+    // In C++, we cancel goals from the action client, not from the goal handle. To make things simpler here, 
+    // we’re canceling all goals that could have been sent by this client.
+    void cancelGoal()
+    {
+        RCLCPP_INFO(this->get_logger(), "Send a cancel goal request");
+        count_until_client_->async_cancel_all_goals();
+    }
+
 private:
     // Get the goal response and print it
     void goalResponseCallback(const CountUntilGoalHandle::SharedPtr &goal_handle)
@@ -90,6 +99,11 @@ private:
         (void)goal_handle;
         int number = feedback->current_number;
         RCLCPP_INFO(this->get_logger(), "Got feedback: %d", number);
+        
+        // uncomment the folllowing to test cancel goal
+        // if (number >= 2) {
+        //     cancelGoal();
+        // }
     }
 
     rclcpp_action::Client<CountUntil>::SharedPtr count_until_client_;

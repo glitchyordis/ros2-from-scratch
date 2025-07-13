@@ -2,12 +2,17 @@
 import time
 
 import rclpy
-from rclpy.action import ActionServer, GoalResponse
+from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.action.server import ServerGoalHandle
+from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 
 from my_robot_interfaces.action import CountUntil
 
+# when using  multi-threaded executors, we also need to use callback groups.
+# Here, ReentrantCallbackGroup will allow all callbacks to be executed in parallel. This means that you can have several goal, cancel,
+# and execute callbacks running at the same time for one action server.
 
 class CountUntilServerNode(Node):
     def __init__(self):
@@ -17,7 +22,9 @@ class CountUntilServerNode(Node):
             CountUntil, 
             "count_until", # action name
             goal_callback=self.goal_callback,
-            execute_callback=self.execute_callback)
+            cancel_callback=self.cancel_callback,
+            execute_callback=self.execute_callback,
+            callback_group=ReentrantCallbackGroup())
         self.get_logger().info("Action server has been started.")
 
         
@@ -30,9 +37,14 @@ class CountUntilServerNode(Node):
         self.get_logger().info("Accepting the goal")
         return GoalResponse.ACCEPT
         
+    def cancel_callback(self, goal_handle: ServerGoalHandle):
+        self.get_logger().info("Received a cancel request")
+        return CancelResponse.ACCEPT # to reject use .REJECT
+        
     # If a goal has been accepted, it will then be executed in this callback
     # After we are done with the goal execution we set a final state and return the result
     # When executing the goal we also check if we need to cancel it
+    #  you need to set the goal’s final state and return a result, even if you cancel the goal. 
     def execute_callback(self, goal_handle: ServerGoalHandle):
         target_number = goal_handle.request.target_number
         delay = goal_handle.request.delay
@@ -42,6 +54,12 @@ class CountUntilServerNode(Node):
 
         self.get_logger().info("Executing the goal")
         for i in range (target_number):
+            if goal_handle.is_cancel_requested:
+                self.get_logger().info("Canceling goal")
+                goal_handle.canceled()
+                result.reached_number = counter
+                return result
+            
             counter += 1
             self.get_logger().info(str(counter))
             
@@ -57,7 +75,7 @@ class CountUntilServerNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = CountUntilServerNode()
-    rclpy.spin(node)
+    rclpy.spin(node, MultiThreadedExecutor())
     rclpy.shutdown()
     
 if __name__ == "__main__":
