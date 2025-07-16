@@ -1,17 +1,27 @@
 #!/usr/bin/env python3
 import rclpy
-from rclpy.node import Node
 
 # importing interface we need the 
 # package name: example_interfaces
 # folder for the topic messages: msg
 # class for interface: Int64
 from example_interfaces.msg import Int64
+from rclpy.node import Node
+
 
 class NumberPublisherNode(Node):
     def __init__(self):
         super().__init__("number_publisher")
-        self.number_ = 2
+        
+        # parameters require a name and data type (depends on default val you provide)
+        # String: self.declare_parameter("device_name", "/dev/ttyUSB0")
+        # Int array: self.declare_parameter("numbers", [4, 5, 6])
+        # declare param before getting it else you'll get arameterNotDeclaredException)
+        self.declare_parameter("number", 2) # this means you must use int, not float else get InvalidParameterTypeException
+        self.declare_parameter("publish_period", 1.0)        
+        
+        self.number_ = self.get_parameter("number").value
+        self.timer_period_ = self.get_parameter("publish_period").value
         
         # publsih a topic named "number" of type Int64
         # with a queue size of 10
@@ -19,7 +29,7 @@ class NumberPublisherNode(Node):
             self.create_publisher(Int64, "number", 10)
             
         # publish every second
-        self.timer_ = self.create_timer(1, self.publish_number)
+        self.number_timer_ = self.create_timer(self.timer_period_, self.publish_number)
         self.get_logger().info("Number publisher node started")
     
     def publish_number(self):
