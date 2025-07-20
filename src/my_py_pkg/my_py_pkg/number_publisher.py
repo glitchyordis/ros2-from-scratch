@@ -7,6 +7,7 @@ import rclpy
 # class for interface: Int64
 from example_interfaces.msg import Int64
 from rclpy.node import Node
+from rclpy.parameter import Parameter
 
 
 class NumberPublisherNode(Node):
@@ -23,6 +24,8 @@ class NumberPublisherNode(Node):
         self.number_ = self.get_parameter("number").value
         self.timer_period_ = self.get_parameter("publish_period").value
         
+        self.add_post_set_parameters_callback(self.parameters_callback)
+        
         # publsih a topic named "number" of type Int64
         # with a queue size of 10
         self.number_publisher_ = \
@@ -36,6 +39,12 @@ class NumberPublisherNode(Node):
         msg = Int64()
         msg.data = self.number_
         self.number_publisher_.publish(msg)
+        
+    def parameters_callback(self, params: list[Parameter]):
+        #  For each parameter, you can access its name, value, and type.
+        for param in params:
+            if param.name == "number":
+                self.number_ = param.value
 
 def main(args=None):
     rclpy.init(args=args)
